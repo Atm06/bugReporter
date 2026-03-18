@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import traceback
 import uuid
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,7 @@ from pydantic import BaseModel
 
 from .local_store import LocalStoreClient
 from .sheets import SheetClient
+from .supabase_store import SupabaseStoreClient
 
 load_dotenv()
 
@@ -40,29 +42,45 @@ ADMIN_TOKEN = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()[:40]
 
 app = FastAPI(title="Bug Bash Reporter")
 
+
+@app.exception_handler(Exception)
+async def _debug_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "trace": traceback.format_exc()},
+    )
+
+
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
-sheet: SheetClient | LocalStoreClient | None = None
+sheet: SheetClient | LocalStoreClient | SupabaseStoreClient | None = None
 
 
 @app.on_event("startup")
 def startup() -> None:
     global sheet
-    sheet_id = os.getenv("GOOGLE_SHEET_ID", "")
-    creds_file = os.getenv("GOOGLE_CREDENTIALS_FILE", "credentials.json")
-    creds_path = PROJECT_DIR / creds_file
+    supabase_url = os.getenv("SUPABASE_URL", "").strip()
+    supabase_key = os.getenv("SUPABASE_KEY", "").strip()
 
-    if sheet_id and creds_path.exists():
-        sheet = SheetClient(sheet_id, str(creds_path))
-        print("✔ Using Google Sheets backend")
+    if supabase_url and supabase_key:
+        sheet = SupabaseStoreClient(supabase_url, supabase_key)
+        print(f"✔ Using Supabase backend ({supabase_url})")
     else:
-        db_dir = Path(os.getenv("DB_PATH", str(PROJECT_DIR)))
-        db_dir.mkdir(parents=True, exist_ok=True)
-        db_path = db_dir / "bugs.db"
-        sheet = LocalStoreClient(db_path)
-        print(f"✔ Using local SQLite backend ({db_path})")
+        sheet_id = os.getenv("GOOGLE_SHEET_ID", "")
+        creds_file = os.getenv("GOOGLE_CREDENTIALS_FILE", "credentials.json")
+        creds_path = PROJECT_DIR / creds_file
+
+        if sheet_id and creds_path.exists():
+            sheet = SheetClient(sheet_id, str(creds_path))
+            print("✔ Using Google Sheets backend")
+        else:
+            db_dir = Path(os.getenv("DB_PATH", str(PROJECT_DIR)))
+            db_dir.mkdir(parents=True, exist_ok=True)
+            db_path = db_dir / "bugs.db"
+            sheet = LocalStoreClient(db_path)
+            print(f"✔ Using local SQLite backend ({db_path})")
 
 
 def _sheet() -> SheetClient | LocalStoreClient:
@@ -262,7 +280,13 @@ async def upload_screenshot(file: UploadFile = File(...)):
         raise HTTPException(400, f"File too large (max {MAX_UPLOAD_BYTES // (1024*1024)}MB)")
 
     filename = f"{uuid.uuid4().hex}{ext}"
+
+    if isinstance(_sheet(), SupabaseStoreClient):
+        url = _sheet().upload_file(
+            filename, contents, file.content_type or "image/png"
+        )
+        return {"filename": filename, "url": url}
+
     dest = UPLOAD_DIR / filename
     dest.write_bytes(contents)
-
     return {"filename": filename, "url": f"/uploads/{filename}"}
