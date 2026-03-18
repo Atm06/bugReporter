@@ -1,31 +1,22 @@
 # Bug Bash Reporting System - Catalog
 
-A lightweight bug reporting web app for one-day bug bash events. Built with FastAPI and backed by Google Sheets.
+A lightweight bug reporting web app for one-day bug bash events. Built with FastAPI and backed by a local SQLite database.
 
 ## Features
 
-- Bug submission form with severity, category, steps to reproduce, and screenshot upload
+- Bug submission form with severity, category, page type, steps to reproduce, and screenshot upload
+- Categories with sub-page selection (Detail / Search) for Software, Hardware, Solutions, Partners, Containers, Cloud
+- Page URL field to link directly to where the issue was found
 - Live dashboard with filters, search, and status management
-- Leaderboard with point-based scoring (Critical=4, High=3, Medium=2, Low=1)
+- Admin mode (edit/delete all bugs, change status) protected by password
+- Regular users can edit only the bugs they reported
+- Leaderboard with point-based scoring
 - Auto-refresh to keep all participants in sync
-- Google Sheets backend for easy sharing and post-event analysis
+- Data stored locally in SQLite -- no external services required
 
 ## Prerequisites
 
 - Python 3.10+
-- A Google Cloud project with Sheets API and Drive API enabled
-- A service account with a downloaded JSON key
-
-## Google Sheets Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project (or use an existing one)
-3. Enable **Google Sheets API** and **Google Drive API**
-4. Go to **Credentials** > **Create Credentials** > **Service Account**
-5. Download the JSON key and save it as `credentials.json` in the `bugbash/` directory
-6. Create a new Google Sheet
-7. Share the sheet with the service account email (found in `credentials.json` under `client_email`) as an **Editor**
-8. Copy the sheet ID from the URL: `https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit`
 
 ## Installation
 
@@ -47,10 +38,17 @@ cp .env.example .env
 Edit `.env`:
 
 ```
-GOOGLE_SHEET_ID=<your-sheet-id>
-GOOGLE_CREDENTIALS_FILE=credentials.json
-CATEGORIES=Search,Browse,Product Detail,Cart,Checkout,Filters,Navigation,API,Other
+ADMIN_PASSWORD=your-admin-password
+ADMIN_EMAIL=admin@company.com
 ```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ADMIN_PASSWORD` | Password required for admin login | `changeme` |
+| `ADMIN_EMAIL` | Email that triggers admin password prompt at sign-in | (none) |
+| `UPLOAD_MAX_SIZE_MB` | Max screenshot upload size | `10` |
+| `DB_PATH` | Directory for the SQLite database | project root |
+| `UPLOAD_PATH` | Directory for uploaded screenshots | `uploads/` |
 
 ## Running
 
@@ -58,7 +56,18 @@ CATEGORIES=Search,Browse,Product Detail,Cart,Checkout,Filters,Navigation,API,Oth
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Participants can access the app at `http://<your-ip>:8000` on the local network.
+Open `http://localhost:8000` in your browser.
+
+## Sharing with your team
+
+To give your team access during the bug bash, use [ngrok](https://ngrok.com/) to create a public URL:
+
+```bash
+brew install ngrok
+ngrok http 8000
+```
+
+Share the generated `https://...ngrok-free.app` URL with participants.
 
 ## Pages
 
@@ -68,6 +77,13 @@ Participants can access the app at `http://<your-ip>:8000` on the local network.
 | `/dashboard` | View all bugs, filter, update status |
 | `/leaderboard` | See who's finding the most bugs |
 
+## Roles
+
+| Role | How to access | Permissions |
+|------|---------------|-------------|
+| Admin | Sign in with the admin email + password | Edit/delete all bugs, change status |
+| Regular user | Sign in with any other email | Submit bugs, edit only their own bugs |
+
 ## Scoring
 
 | Severity | Points |
@@ -76,3 +92,14 @@ Participants can access the app at `http://<your-ip>:8000` on the local network.
 | High | 3 |
 | Medium | 2 |
 | Low | 1 |
+
+## Categories
+
+**Pages** (prompted to select Detail or Search):
+Software, Hardware, Solutions, Partners, Containers, Cloud
+
+**Features** (no sub-selection):
+Autosuggest, Global Search, API, Authentication, Favorites
+
+**Other:**
+Prompts for a manual page title and URL

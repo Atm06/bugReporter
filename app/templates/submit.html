@@ -9,6 +9,23 @@
         <p class="mt-2 text-gray-600">Found something broken in Catalog? Fill out the form below.</p>
     </div>
 
+    <!-- Success message (hidden by default) -->
+    <div id="submit-success" class="hidden bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-10 text-center">
+        <div class="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-5">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Thank you!</h2>
+        <p class="text-gray-600 mb-6">Your bug report has been submitted successfully. Every bug you find helps make the product better.</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <button onclick="resetSubmitForm()" class="px-6 py-2.5 bg-brand-600 text-white rounded-lg font-medium text-sm hover:bg-brand-700 transition-colors">
+                Report Another Bug
+            </button>
+            <a href="/dashboard" class="px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                View Dashboard
+            </a>
+        </div>
+    </div>
+
     <form id="bug-form" class="bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-6 space-y-6">
         <!-- Reporter Info -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -384,12 +384,13 @@ function formatCategory(bug) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
-            showToast("Bug reported successfully!");
+            showToast("Bug report submitted!", "success");
             form.reset();
             clearScreenshot();
             subcategoryGroup.classList.add("hidden");
             otherFieldsGroup.classList.add("hidden");
-            prefillReporterFields();
+            form.classList.add("hidden");
+            document.getElementById("submit-success").classList.remove("hidden");
         } catch (err) {
             showToast("Error: " + err.message, "error");
         } finally {
@@ -398,6 +399,13 @@ function formatCategory(bug) {
         }
     });
 })();
+
+function resetSubmitForm() {
+    document.getElementById("submit-success").classList.add("hidden");
+    document.getElementById("bug-form").classList.remove("hidden");
+    prefillReporterFields();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
 /* ===== Dashboard ========================================================= */
 
