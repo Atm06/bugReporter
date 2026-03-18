@@ -677,6 +677,9 @@ async function confirmDelete() {
     const bugId = pendingDeleteId;
     try {
         await api(`/api/bugs/${bugId}`, { method: "DELETE" });
+        allBugs = allBugs.filter(b => b.ID !== bugId);
+        updateSummaryCards();
+        renderBugs();
         showToast(`Bug #${bugId} deleted`);
         closeDeleteModal();
         await loadBugs(false);
