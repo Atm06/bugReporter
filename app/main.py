@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-import traceback
 import uuid
 from pathlib import Path
 from typing import Any
@@ -41,14 +40,6 @@ ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip().lower()
 ADMIN_TOKEN = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()[:40]
 
 app = FastAPI(title="Bug Bash Reporter")
-
-
-@app.exception_handler(Exception)
-async def _debug_exception_handler(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=500,
-        content={"detail": str(exc), "trace": traceback.format_exc()},
-    )
 
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
