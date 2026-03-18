@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: bugbash
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: DB_PATH
+        value: /data
+      - key: UPLOAD_PATH
+        value: /data/uploads
+    disk:
+      name: bugbash-data
+      mountPath: /data
+      sizeGB: 1

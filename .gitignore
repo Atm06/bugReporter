@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.env
+credentials.json
+uploads/*
+!uploads/.gitkeep
+.venv/
+*.egg-info/
+dist/
+build/
+*.db
+*.db-shm
+*.db-wal

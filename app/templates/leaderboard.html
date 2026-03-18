@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard{% endblock %}
+{% block nav_leaderboard %}active{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Leaderboard</h1>
+            <p class="mt-1 text-gray-600 text-sm">Top bug hunters &mdash; auto-refreshes every 60s</p>
+        </div>
+        <div class="text-xs text-gray-400 bg-white rounded-lg ring-1 ring-gray-200 px-3 py-2">
+            Scoring: Critical = 4 pts &bull; High = 3 pts &bull; Medium = 2 pts &bull; Low = 1 pt
+        </div>
+    </div>
+
+    <!-- Podium (top 3) -->
+    <div id="podium" class="hidden mb-10">
+        <div class="flex items-end justify-center gap-4">
+            <!-- 2nd place -->
+            <div id="podium-2" class="flex flex-col items-center">
+                <div class="text-center mb-2">
+                    <div class="text-sm font-bold text-gray-700 truncate max-w-[120px]" id="podium-2-name"></div>
+                    <div class="text-xs text-gray-500" id="podium-2-pts"></div>
+                </div>
+                <div class="w-24 sm:w-32 podium-2 rounded-t-xl flex items-center justify-center" style="height:100px">
+                    <span class="text-3xl font-black text-white/80">2</span>
+                </div>
+            </div>
+            <!-- 1st place -->
+            <div id="podium-1" class="flex flex-col items-center">
+                <div class="text-center mb-2">
+                    <div class="text-sm font-bold text-gray-700 truncate max-w-[120px]" id="podium-1-name"></div>
+                    <div class="text-xs text-gray-500" id="podium-1-pts"></div>
+                </div>
+                <div class="w-24 sm:w-32 podium-1 rounded-t-xl flex items-center justify-center" style="height:140px">
+                    <span class="text-4xl font-black text-white/80">1</span>
+                </div>
+            </div>
+            <!-- 3rd place -->
+            <div id="podium-3" class="flex flex-col items-center">
+                <div class="text-center mb-2">
+                    <div class="text-sm font-bold text-gray-700 truncate max-w-[120px]" id="podium-3-name"></div>
+                    <div class="text-xs text-gray-500" id="podium-3-pts"></div>
+                </div>
+                <div class="w-24 sm:w-32 podium-3 rounded-t-xl flex items-center justify-center" style="height:70px">
+                    <span class="text-2xl font-black text-white/80">3</span>
+                </div>
+            </div>
+        </div>
+        <div class="h-2 bg-gray-200 rounded-b-xl max-w-md mx-auto"></div>
+    </div>
+
+    <!-- Full rankings table -->
+    <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600 w-16">Rank</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Reporter</th>
+                    <th class="px-4 py-3 text-center font-semibold text-gray-600">Points</th>
+                    <th class="px-4 py-3 text-center font-semibold text-gray-600">Bugs</th>
+                    <th class="px-4 py-3 text-center font-semibold text-red-600">Crit</th>
+                    <th class="px-4 py-3 text-center font-semibold text-orange-600">High</th>
+                    <th class="px-4 py-3 text-center font-semibold text-yellow-600">Med</th>
+                    <th class="px-4 py-3 text-center font-semibold text-green-600">Low</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body" class="divide-y divide-gray-100">
+                <tr><td colspan="8" class="px-4 py-12 text-center text-gray-400">Loading leaderboard...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="no-data-msg" class="hidden text-center py-12 text-gray-400">
+        No bugs reported yet. Be the first to <a href="/" class="text-brand-600 underline">report a bug</a>!
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>initLeaderboard();</script>
+{% endblock %}
