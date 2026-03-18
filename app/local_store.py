@@ -85,15 +85,38 @@ class LocalStoreClient:
     async def get_all_bugs_async(self, *, force: bool = False) -> list[dict[str, str]]:
         return await asyncio.to_thread(self.get_all_bugs, force=force)
 
+    def _next_id(self) -> int:
+        row = self._conn.execute("SELECT COALESCE(MAX(id), 0) FROM bugs").fetchone()
+        return row[0] + 1
+
+    def _renumber(self) -> None:
+        """Re-sequence IDs to 1, 2, 3 ... so there are no gaps."""
+        rows = self._conn.execute("SELECT id FROM bugs ORDER BY id").fetchall()
+        for new_id, (old_id,) in enumerate(rows, 1):
+            if new_id != old_id:
+                self._conn.execute(
+                    "UPDATE bugs SET id = ? WHERE id = ?", (new_id, old_id)
+                )
+        seq_val = len(rows)
+        self._conn.execute("DELETE FROM sqlite_sequence WHERE name = 'bugs'")
+        if seq_val:
+            self._conn.execute(
+                "INSERT INTO sqlite_sequence (name, seq) VALUES ('bugs', ?)",
+                (seq_val,),
+            )
+        self._conn.commit()
+
     def append_bug(self, data: dict[str, Any]) -> dict[str, str]:
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        cur = self._conn.execute(
+        next_id = self._next_id()
+        self._conn.execute(
             """INSERT INTO bugs
-               (title, description, severity, category, subcategory, steps,
+               (id, title, description, severity, category, subcategory, steps,
                 screenshot, reporter_name, reporter_email, status, created_at,
                 page_url, page_title)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Open', ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Open', ?, ?, ?)""",
             (
+                next_id,
                 data.get("title", ""),
                 data.get("description", ""),
                 data.get("severity", "Medium"),
@@ -110,7 +133,7 @@ class LocalStoreClient:
         )
         self._conn.commit()
         row = self._conn.execute(
-            f"SELECT {', '.join(COLUMNS)} FROM bugs WHERE id = ?", (cur.lastrowid,)
+            f"SELECT {', '.join(COLUMNS)} FROM bugs WHERE id = ?", (next_id,)
         ).fetchone()
         return self._row_to_dict(row)
 
@@ -169,7 +192,10 @@ class LocalStoreClient:
     def delete_bug(self, bug_id: str) -> bool:
         cur = self._conn.execute("DELETE FROM bugs WHERE id = ?", (bug_id,))
         self._conn.commit()
-        return cur.rowcount > 0
+        if cur.rowcount > 0:
+            self._renumber()
+            return True
+        return False
 
     async def delete_bug_async(self, bug_id: str) -> bool:
         async with self._write_lock:
